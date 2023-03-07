@@ -1,0 +1,273 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>我的订单</title>
+    <link href="css/orderList.css" rel="stylesheet" type="text/css">
+    <link href="css/cart.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="css/foot.css"/>
+    <link rel="stylesheet" href="css/head.css"/>
+    <script type="text/javascript" src="js/base-v1.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery-1.2.6.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/cookie.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/common.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery.cookie.js" charset="utf-8"></script>
+    <script type="text/javascript" src="s/base-2011.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery-extend.js"></script>
+    <script type="text/javascript" src="js/logout.js"></script>
+    <script type="text/javascript" src="js/lib-v1.js" charset="utf-8"></script>
+    <meta charset="UTF-8">
+</head>
+<body style="text-align:center;">
+<script type="text/javascript">
+    var userId="";
+    $(function(){
+        var _ticket = $.cookie("EM_TICKET");
+        if(!_ticket){
+            window.location.href="login.html";
+            return ;
+        }
+        //当dataType类型为jsonp时，jQuery就会自动在请求链接上增加一个callback的参数
+        $.ajax({
+            url : "http://www.easymall.com/user/query/" + _ticket,
+            dataType : "json",
+            type : "GET",
+            success : function(data){
+
+                if(data.status == 200){
+                    var _data = JSON.parse(data.data);//jackson
+                    if(_data==null){
+                        alert("啥也别说了，你的用户超时了,赶紧查查redis还有数据没有");
+                        window.location.href="./login.html";
+                        return;}
+                    if(_data.userType==0){
+	    var html =_data.userName+"，欢迎来到京淘！<a href=\"javascript:void(0)\" class=\"link-logout\" onclick='logout()'>[退出]</a>  ";
+                    }else{
+                    var html =_data.userName+"，欢迎来到京淘！<a href=\"javascript:void(0)\" class=\"link-logout\" onclick='logout()'>[退出]</a>  \|<a href=\"http://www.easymall.com/manage.html\" class=\"link-logout\">[后台]</a>";
+                    }
+                    userId=_data.userId;
+                    $("#loginbar").html(html);
+                    queryOrder(userId);
+                }else{
+                    alert("查询订单出问题了兄嘚");
+                }
+            },
+            error : function(){
+                alert('index error.');
+            }
+        });
+    });
+    function del(productId,userId){
+        if(productId==null||userId==null){
+            alert("删除参数有误");
+            return ;
+        }
+        if(confirm("您确定删除吗？")){
+            $.ajax({
+                url:"http://www.easymall.com/cart/delete?productId="+productId+"&userId="+userId,
+                dataType:"json",
+                type:"GET",
+                success:function (data) {
+                    if(data.status==200){
+                        window.location.href="http://www.easymall.com/mycart.html";
+                    }else{
+                        alert("删除有问题");
+                    }
+                },
+                error:function () {
+                    alert("删除");
+                }
+            });
+
+        }
+    }
+    function inputNum(productId,userId){
+
+        var num=document.getElementById(productId).value;
+        var numOld=document.getElementById("hid_"+productId).value;
+        if(num==""||num==null){
+            alert("num填写错误");
+            return;
+        }
+        if(num==numOld){
+            alert("没有变化数值");
+            return;
+        }
+        if(num>200){
+            alert("购买数量最大200");
+            return;
+        }
+        $.ajax({
+            url:"http://www.easymall.com/cart/update?productId="+productId+"&userId="+userId+"&num="+num,
+            dataType:"json",
+            type:"GET",
+            success:function (data) {
+                if(data.status==200){
+                    window.location.href="./mycart.html";
+                }else{
+                    alert("更新返回的不是成功数据");
+                }
+            },
+            error:function () {
+                alert("咋回事，改个num还能出错，没访问到cart系统吧兄弟");
+            }
+        });
+    }
+    function queryOrder(userId){
+        if(userId==""){
+            window.location.href="./login.html";
+            return;
+        }
+        $.ajax({
+            url:"http://www.easymall.com/order/query/?userId="+userId,
+            dataType:"json",
+            type:"GET",
+            success:function(data){
+         		// console.log(data);
+                if(data.length>0){
+                    var money=0;
+                    $.each(data,function(index, orderInfo){
+                        var orderId=orderInfo.order.orderId;
+                        var orderTime=orderInfo.order.orderTime;
+                        var orderMoney=orderInfo.order.orderMoney;
+                        var payState=orderInfo.order.orderPaystate;
+                        //var orderItems=order.orderItems;
+	        			var orderItems = orderInfo.orderItems;
+                        if(payState==0){
+                            $("#orders").append("<dl class='Order_information'><dt><h3>订单信息</h3></dt></dl><dd>订单编号:"+orderId+"</br>下单时间:"+orderTime+"</br>订单金额:"+orderMoney+"</br>支付状态:<font color=\"red\">未支付</font><a href='javascript:void()' onclick='delOrder(\""+orderId+"\")'><img src=\"img/orderList/sc.jpg\" width=\"69\" height=\"19\"></a><a href='javascript:void()' onclick='payOrder(\""+orderId+"\")'> <img src=\"img/orderList/zx.jpg\" width=\"69\" height=\"19\"></a><br />收货地址: "+orderInfo.order.orderReceiverinfo+"<br/>支付方式：在线支付</dd>");
+                        }else if(payState==1){
+                            $("#orders").append("<dl class='Order_information'><dt><h3>订单信息</h3></dt></dl><dd>订单编号:"+orderId+"</br>下单时间:"+orderTime+"</br>订单金额:"+orderMoney+"<br/>收货地址: "+orderInfo.order.orderReceiverinfo+"<br/>支付方式：在线支付</dd><font style='font-size:18px;'> 支付状态:<font><font style='font-size:18px;font-weight:bold' color=\"blue\">已支付</font></br>");
+                        }else if(payState==2){
+                            $("#orders").append("<dl class='Order_information'><dt><h3>订单信息</h3></dt></dl><dd>订单编号:"+orderId+"</br>下单时间:"+orderTime+"</br>订单金额:"+orderMoney+"</br>支付状态:<font color=\"blue\">已发货</font><button onclick='getOrder(\""+orderId+"\")'>确认收货</button><a href='javascript:void()' onclick='getOrder("+orderId+")'>  <img src='img/orderList/sh.png' width='69' height='19'></a><br/>收货地址: "+orderInfo.order.orderReceiverinfo+"<br/>支付方式：在线支付</dd>");
+                        }else{
+                            $("#orders").append("<dl class='Order_information'><dt><h3>订单信息</h3></dt></dl><dd>订单编号:"+orderId+"</br>下单时间:"+orderTime+"</br>订单金额:"+orderMoney+"</br>支付状态:<font color=\"blue\">已收货</font><br/>收货地址: "+orderInfo.order.orderReceiverinfo+"<br/>支付方式：在线支付</dd>");
+                        }
+                        $("#orders").append("<table id='orderTable_"+orderId+"' width=\"1200\" border=\"0\" cellpadding=\"0\"cellspacing=\"1\" style=\"background:#d8d8d8;color:#333333\"><tr><th width=\"276\" height=\"30\" align=\"center\" valign=\"middle\" bgcolor=\"#f3f3f3\">商品图片</th><th width=\"247\" align=\"center\" valign=\"middle\" bgcolor=\"#f3f3f3\">商品名称</th><th width=\"231\" align=\"center\" valign=\"middle\" bgcolor=\"#f3f3f3\">商品单价</th><th width=\"214\" align=\"center\" valign=\"middle\" bgcolor=\"#f3f3f3\">购买数量</th><th width=\"232\" align=\"center\" valign=\"middle\" bgcolor=\"#f3f3f3\">小计</th></tr></table><div class=\"Order_price\">"+orderMoney+"元</div>");
+                        if(orderItems.length>0){
+                            $.each(orderItems,function (indexnumber,orderItem) {
+                                    var money=orderItem.num*orderItem.productPrice;
+                                    $("#orderTable_"+orderId).append("<tr><td align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\"><img src=\""+orderItem.productImage+"\" width=\"90\" height=\"105\"></td><td align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\">"+orderItem.productName+"</td><td align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\">"+orderItem.productPrice+"元</td><td align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\">"+orderItem.num+"件</td><td align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\">"+money+"元</td></tr>");
+                            });
+                        }
+
+                    });
+                    document.getElementById("span_2").innerText=money+"￥";
+                    //alert(money);
+                }else{
+                    alert("你是不是没登陆啊");
+                }
+            },
+            error:function(error){
+            	console.log(error);
+            }
+        });
+    }
+    function delOrder(orderId){
+        $.ajax({
+            url:"http://www.easymall.com/order/delete/"+orderId,
+            dataType:"json",
+            type:"GET",
+            success:function (data) {
+                if(data.status==200){
+                    window.location.href="http://www.easymall.com/myorder.html";
+                }else{
+                    alert("删除失败");
+                }
+            },
+            error:function () {
+               // alert("请刷新页面");
+            }
+        })
+    }
+function payOrder(orderId){
+        $.ajax({
+            url:"http://www.easymall.com/order/pay/"+orderId,
+            dataType:"json",
+            type:"GET",
+            success:function (data) {
+                if(data.status==200){
+                    window.location.href="http://www.easymall.com/myorder.html";
+                }else{
+                    alert("支付失败");
+                }
+            },
+            error:function () {
+                alert("请刷新页面");
+            }
+        })
+    }
+function getOrder(orderId){
+        $.ajax({
+            url:"http://www.easymall.com/order/get/?orderId="+orderId,
+            dataType:"json",
+            type:"GET",
+            success:function (data) {
+            	console.log(data);
+                queryOrder(userId);
+                if(data.status==200){
+                    window.location.href="http://www.easymall.com/myorder.html";
+                }else{
+                    alert("收货失败");
+                }
+            },
+            error:function (error) {
+            	// console.log(error);
+              //  alert("请刷新页面");
+            }
+        })
+    }
+    function search(a){
+        var query=document.getElementById(a).value;
+        //alert(query);
+        window.location.href="./search.html?query="+query;
+
+    }
+</script>
+<div id="common_head">
+    <div id="line1">
+        <div id="content">
+            <li class="fore1" id="loginbar" clstag="homepage|keycount|home2013|01b">
+                <span id="head_span"\\\x><a href="views/login.html">登录</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="views/regist.html">注册</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="views/manage.html">后台</a></span>
+
+            </li>
+        </div>
+    </div>
+    <div id="line2">
+        <img id="logo" src="img/head/logo.jpg"/>
+        <input type="text" value="" accesskey="s" id="key" autocomplete="off" onkeydown="javascript:if(event.keyCode==13) search('key');"/>
+        <input type="button" value="搜 索" onclick="search('key')"/>
+        <span id="goto">
+			<a id="goto_order" href="./myorder.html">我的订单</a>
+			<a id="goto_cart" href="./mycart.html">我的购物车</a>
+		</span>
+        <img id="erwm" src="img/head/qr.jpg"/>
+    </div>
+    <div id="line3">
+        <div id="content">
+            <ul>
+                <li><a href="./index.html">首页</a></li>
+                <li><a href="./product-list.html?page=1&rows=5">全部商品</a></li>
+                <li><a href="./seckill-list.html">秒杀商品</a></li>
+                <li><a href="./product-catefory.html?category=手机数码&page=1&rows=5">手机数码</a></li>
+                <li><a href="./product-catefory.html?category=家用电器&page=1&rows=5">家用电器</a></li>
+                <li><a href="./product-catefory.html?category=汽车用品&page=1&rows=5">汽车用品</a></li>
+                <li><a href="./product-catefory.html?category=食品饮料&page=1&rows=5">食品饮料</a></li>
+                <li><a href="./product-catefory.html?category=图书杂志&page=1&rows=5">图书杂志</a></li>
+                <li><a href="./product-catefory.html?category=服装服饰&page=1&rows=5">服装服饰</a></li>
+                <li><a href="./product-catefory.html?category=理财产品&page=1&rows=5">理财产品</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div id="orders">
+
+</div>
+<div id="common_foot">
+    <p>
+        Copyright © 2011-2015 达内软件技术有限公司 版权所有 保留一切权利 苏B2-20130048号 | 京ICP备09062682号-9
+        <br>
+        网络文化经营许可证苏网文[2012]0401-019号
+    </p>
+</div>
+</body>
+</html>

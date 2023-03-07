@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width"/>
+    <link href="js/kindeditor-4.1.10/themes/default/default.css" type="text/css" rel="stylesheet">
+    <script type="text/javascript" charset="utf-8" src="js/kindeditor-4.1.10/kindeditor-all-min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/kindeditor-4.1.10/lang/zh_CN.js"></script>
+
+    <title>Document</title>
+    <link rel="stylesheet" href="css/reset.css" type="text/css"/>
+    <link rel="stylesheet" href="css/gonggong.css" type="text/css"/>
+    <link rel="stylesheet" href="css/shoppingMall.css" type="text/css"/>
+    <link rel="stylesheet" type="text/css" href="js/jquery-easyui-1.4.1/themes/default/easyui.css" />
+    <link rel="stylesheet" type="text/css" href="js/jquery-easyui-1.4.1/themes/icon.css" />
+</head>
+
+<body>
+<div style="padding:10px 10px 10px 10px">
+    <form id="categoryAddForm" class="categoryForm" method="post">
+        <table cellpadding="5">
+            <tr>
+                <td>商品分类:</td>
+                <td>
+                    <input type="text" name="categoryName" style="width: 280px;"></input>
+                </td>
+            </tr>
+           
+        </table>
+    </form>
+    
+    <div style="padding:5px">
+        <a href="javascript:void(0)" class="easyui-linkbutton" onclick="submitForm()">提交</a>
+        <a href="javascript:void(0)" class="easyui-linkbutton" onclick="clearForm()">重置</a>
+    </div>
+</div>
+</div>
+<script src="js/jquery-1.7.1.min.js"></script>
+<script src="js/shoppingMall.js"></script>
+<script src="js/shoppingDetail.js"></script>
+<script>
+
+    function clearForm(){
+        // alert("1111");
+       document.getElementById("categoryForm").reset();
+        //document.getElementById("photo").src="img/shangchuanBg.png";
+    }
+    function submitForm(){
+    //    alert("2222");
+        // alert($("#categoryAddForm").serialize());
+        $.post("/category/save",$("#categoryAddForm").serialize(), function(data){
+            if(data.status == 200){
+                alert("新增类别成功");
+            }
+        });
+    }
+   
+
+
+
+
+</script>
+</body>
+</html>

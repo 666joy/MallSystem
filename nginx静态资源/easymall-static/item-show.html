@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link href="css/orderList.css" rel="stylesheet" type="text/css">
+    <link href="css/cart.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="css/foot.css"/>
+    <link rel="stylesheet" href="css/head.css"/>
+    <script type="text/javascript" src="js/base-v1.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery-1.2.6.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/common.js" charset="utf-8"></script>
+    <script type="text/javascript" src="s/base-2011.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery-extend.js"></script>
+    <script type="text/javascript" src="js/logout.js"></script>
+    <script type="text/javascript" src="js/lib-v1.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/cookie.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery.cookie.js" charset="utf-8"></script>
+    <meta charset="UTF-8">
+</head>
+<body>
+<!-- 
+<table class="easyui-datagrid" id="itemList" title="销售榜单"
+       data-options="singleSelect:false,collapsible:true,pagination:true,
+       url:'http://www.easymall.com//order/query/?userId=',method:'get',pageSize:20,toolbar:toolbar">
+    <thead>
+    <tr>
+        <th data-options="field:'productName',width:150,align:'center'">商品名称</th>
+        <th data-options="field:'productSellnum',width:100,align:'center'">商品销量</th>
+    </tr>
+    </thead>
+</table> -->
+
+<div id="userAndOrder"></div>
+<script type="text/javascript">
+    $(function(){
+        searchOrder();
+        
+    });
+    function searchOrder(){
+        $.ajax({
+            url:"http://www.easymall.com/order/search",
+            dataType:"json",
+            type:"GET",
+            success:function(data){
+                console.log(data);
+                if(data.length>0){
+                    $.each(data,function(index,userAndOrderInfo){
+                        var flag=false;
+                        orderInfo=userAndOrderInfo.ol;
+                        UserName=userAndOrderInfo.user.userNickname;
+                        $("#userAndOrder").append("<th style='font-size:20px;'>用户："+UserName+"</th></br>");
+                        if(orderInfo!=null){
+                            for(var i=0;i<orderInfo.length;i++){
+                                var orderId=orderInfo[i].order.orderId;
+                                var orderTime=orderInfo[i].order.orderTime;
+                                var orderMoney=orderInfo[i].order.orderMoney;
+                                var payState=orderInfo[i].order.orderPaystate;
+                                //var orderItems=order.orderItems;
+                                var orderItems = orderInfo[i].orderItems;
+                                if(payState==1){
+                                    flag=true;
+                                    $("#userAndOrder").append("<dl class='Order_information'><dt><h3>订单信息</h3></dt></dl><dd>订单编号:"+orderId+"</br>下单时间:"+orderTime+"</br>订单金额:"+orderMoney+"<br/>收货地址: "+orderInfo[i].order.orderReceiverinfo+"<br/>支付方式：在线支付</dd><font style='font-size:18px;'> 发货状态:</font><font style='font-size:18px;font-weight:bold' color=\"blue\">未发货</font><button style='font-size:18px;font-weight:bold;color:red' onclick='fahuo(\""+orderId+"\")'>点击发货</buttons></br>");
+                                } 
+                            }
+                        }
+                        if(!flag){
+                            $("#userAndOrder").append("<div style='font-size:12px;'>该用户暂时没有待发货的订单<div>");
+                        }
+                        
+                        
+                    });
+                        
+                    // document.getElementById("span_2").innerText=money+"￥";
+                    //alert(money);
+                }else{
+                    alert("你是不是没登陆啊");
+                }
+            },
+            error:function(error){
+                
+                console.log(error);
+            }
+        });
+
+    }
+    function fahuo(orderId){
+        $.ajax({
+            url:"http://www.easymall.com/order/send/?orderId="+orderId,
+            dataType:"json",
+            type:"GET",
+            success:function (data) {
+            	console.log(data);
+                if(data.status==200){
+                    alert("发货成功");
+                    // location.reload("http://www.easymall.com/manage.html");
+                    location.replace(document.referrer);
+                }else{
+                    alert("发货失败");
+                }
+            },
+            error:function (error) {
+            	console.log(error);
+                // alert("发货成功");
+                // location.reload("http://www.easymall.com/manage.html");
+            }
+        })
+    }
+</script>
+</body>
+</html>

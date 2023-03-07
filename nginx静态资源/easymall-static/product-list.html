@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        .divcss5{ border:1px solid #F00; width:200px; height:100px}
+    </style>
+    <link rel="stylesheet" href="css/foot.css"/>
+    <link rel="stylesheet" href="css/head.css"/>
+    <meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+    <script type="text/javascript" src="js/base-v1.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery-1.2.6.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/cookie.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/common.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery.cookie.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/base-2011.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/jquery-extend.js"></script>
+    <script type="text/javascript" src="js/logout.js"></script>
+    <script type="text/javascript" src="js/lib-v1.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/manage-auto-login.js"></script>
+    <link href="css/prodList.css" rel="stylesheet" type="text/css">
+    <meta charset="UTF-8">
+    <title>商品分页</title>
+    <script type="text/javascript">
+        var userId;
+        window.onload=function(){
+            queryUser();
+            var localUrl=decodeURI(window.location.href);
+            var queryPageParam=localUrl.substr(localUrl.lastIndexOf("?")+1);
+            if(!queryPageParam.match("^page=[0-9]*&rows=[0-9]*$")){
+                alert("长点心，参数不对，是page=&row=吗,按照默认1,5来查吧");
+                queryPages("page=1&rows=5");
+                return;
+            }
+            queryPages(queryPageParam);
+            }
+        function addCartOne(productId,userId){
+            if(productId==null){
+                alert("商品id错误");
+                return;
+            }
+            if(userId==""||userId==null){
+                window.location.href="./login.html";
+                return;
+            }
+            $.ajax({
+               url:"http://www.easymall.com/cart/save?productId="+productId+"&userId="+userId+"&num=1",
+               dataType:"json",
+               type:"GET",
+               success:function (data) {
+                    if(data.status==200){
+                        window.location.href="http://www.easymall.com/mycart.html";
+                    }
+                    else{
+                        alert("新增购物车失败");
+                    }
+               } ,
+               error:function () {
+                   alert("发送失败");
+               }
+
+            });
+        }
+       function queryUser(){
+
+            var _ticket = $.cookie("EM_TICKET");
+            if(!_ticket){
+                return ;
+            }
+            //当dataType类型为jsonp时，jQuery就会自动在请求链接上增加一个callback的参数
+            $.ajax({
+                url : "http://www.easymall.com/user/query/" + _ticket,
+                dataType : "json",
+                type : "GET",
+                success : function(data){
+                    //alert("好啊2");
+                    if(data.status == 200){
+                        var _data = JSON.parse(data.data);//jackson
+                        var html =_data.userName+"，欢迎来到EasyMall！<a href=\"javascript:void(0)\" class=\"link-logout\" onclick='logout()'>[退出]</a>  \|<a href=\"javascript:void(0)\" class=\"link-logout\" onclick='manage_auto_login()'>[后台]</a>";
+                        userId=_data.userId;
+
+                        $("#loginbar").html(html);
+                    }
+                },
+                error : function(){
+                    alert('index error.');
+                }
+            });
+        }
+        function queryPages(param){
+            var ticket=$.cookie("EM_TICKET");
+            var userId="";
+            $.get("http://www.easymall.com/user/query/"+ticket,function (data) {
+                if(data.status==200){
+                    var _data = JSON.parse(data.data);//jackson
+                    userId=_data.userId;
+                }
+            })
+            sleep(200);
+            //alert("等待当前页面加载userId");
+            $.ajax({
+                url:"http://www.easymall.com/products/pageManage?"+param,
+                dataType:"json",
+                type:"POST",
+                success:function(data){
+                    // alert("好啊3");
+                    if(data.rows.length>0){
+
+                        $.each(data.rows,function(index, product){
+                            var product_html="product-info.html?productId="+product.productId;
+                            var productId=product.productId;
+                            $("#prod_content").append("<div id='prod_div'><a href="+product_html+"><img src='"+product.productImgurl+"'width=\"200px\" height=\"200px\"></img> </a><div id='prod_name_div'><a href="+product_html+">"+product.productName+"</a></div><div id='prod_price_div'>￥"+product.productPrice+"元</div><div><div id='gotocart_div'><a href='javascript:void(0)' onclick='addCartOne(\""+productId+"\",\""+userId+"\")'>加入购物车</a></div><div id='say_div'>库存"+product.productNum+"件</div></div></div>");
+                        })
+                    }
+                },
+                error : function(){
+                    alert("请求失败");
+                }
+            });
+        }
+        function search(a){
+            var query=document.getElementById(a).value;
+           // alert(query);
+            window.location.href="./search.html?query="+query;
+
+        }
+        function sleep(delay) {
+            var start = (new Date()).getTime();
+            while ((new Date()).getTime() - start < delay) {
+                continue;
+            }
+        }
+    </script>
+</head>
+<body>
+<div id="common_head">
+    <div id="line1">
+        <div id="content">
+            <li class="fore1" id="loginbar" clstag="homepage|keycount|home2013|01b">
+                <span id="head_span"\\\x><a href="login.html">登录</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="regist.html">注册</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="manage-login.html">后台</a></span>
+
+            </li>
+        </div>
+    </div>
+    <div id="line2">
+        <img id="logo" src="img/head/logo.jpg"/>
+        <input type="text" value="" accesskey="s" id="key" autocomplete="off" onkeydown="javascript:if(event.keyCode==13) search('key');"/>
+        <input type="button" value="搜 索" onclick="search('key')"/>
+        <span id="goto">
+			<a id="goto_order" href="myorder.html">我的订单</a>
+			<a id="goto_cart" href="mycart.html">我的购物车</a>
+		</span>
+        <img id="erwm" src="img/head/qr.jpg"/>
+    </div>
+    <div id="line3">
+        <div id="content">
+            <ul>
+                <li><a href="./index.html">首页</a></li>
+                <li><a href="./product-list.html?page=1&rows=5">全部商品</a></li>
+                <li><a href="./seckill-list.html">秒杀商品</a></li>
+                <li><a href="./product-catefory.html?category=手机数码&page=1&rows=5">手机数码</a></li>
+                <li><a href="./product-catefory.html?category=家用电器&page=1&rows=5">家用电器</a></li>
+                <li><a href="./product-catefory.html?category=汽车用品&page=1&rows=5">汽车用品</a></li>
+                <li><a href="./product-catefory.html?category=食品饮料&page=1&rows=5">食品饮料</a></li>
+                <li><a href="./product-catefory.html?category=图书杂志&page=1&rows=5">图书杂志</a></li>
+                <li><a href="./product-catefory.html?category=服装服饰&page=1&rows=5">服装服饰</a></li>
+                <li><a href="./product-catefory.html?category=理财产品&page=1&rows=5">理财产品</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div id="content">
+    <div id="prod_content">
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+<div id="common_foot">
+    <p>
+        Copyright © 2011-2015 达内软件技术有限公司 版权所有 保留一切权利 苏B2-20130048号 | 京ICP备09062682号-9
+        <br>
+        网络文化经营许可证苏网文[2012]0401-019号
+    </p>
+</div>
+</body>
+</html>
